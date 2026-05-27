@@ -15,7 +15,7 @@
     const vulnerabilities = collectCycloneDxVulnerabilities(sbom.vulnerabilities || []);
     const components = (sbom.components || []).map((component, index) => {
       const id = component.bomRef || component.purl || `${component.name || "unknown"}-${index}`;
-      return window.SBON_RISK.enrichComponent({
+      return window.SBON_REVIEW_PRIORITY.enrichComponent({
         id,
         name: component.name || "名称不明",
         version: component.version || "不明",
@@ -41,7 +41,7 @@
         const list = vulnerabilities.get(ref) || [];
         list.push({
           id: vulnerability.id || "Unknown CVE",
-          severity: window.SBON_RISK.normalizeSeverity(vulnerability.ratings?.[0]?.severity),
+          severity: window.SBON_REVIEW_PRIORITY.normalizeSeverity(vulnerability.ratings?.[0]?.severity),
           score: vulnerability.ratings?.[0]?.score || "",
           description: vulnerability.description || "",
         });
@@ -56,7 +56,7 @@
     const relationships = sbom.relationships || [];
     const dependencies = collectSpdxDependencies(relationships);
     const components = packages.map((pkg, index) =>
-      window.SBON_RISK.enrichComponent({
+      window.SBON_REVIEW_PRIORITY.enrichComponent({
         id: pkg.SPDXID || `${pkg.name || "unknown"}-${index}`,
         name: pkg.name || "名称不明",
         version: pkg.versionInfo || "不明",

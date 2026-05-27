@@ -34,7 +34,7 @@
           <h2>調達・品質保証・セキュリティ管理向けのSBOM確認</h2>
           <p>
             CycloneDX JSON または SPDX JSON を読み込み、OSSコンポーネントを日本語で説明し、
-            脆弱性・ライセンス・保守リスクを確認できます。
+            脆弱性・ライセンス・保守上の確認事項を整理できます。
           </p>
         </div>
         <label class="dropzone" for="fileInput" id="dropzone">
@@ -50,18 +50,52 @@
           <span class="metric-label">総コンポーネント</span>
           <strong id="totalComponents">0</strong>
         </article>
-        <article class="metric risk-high">
-          <span class="metric-label">高リスク</span>
-          <strong id="highRiskCount">0</strong>
+        <article class="metric priority-high">
+          <span class="metric-label">最優先確認</span>
+          <strong id="highPriorityCount">0</strong>
         </article>
-        <article class="metric risk-medium">
+        <article class="metric priority-medium">
           <span class="metric-label">要確認</span>
-          <strong id="mediumRiskCount">0</strong>
+          <strong id="mediumPriorityCount">0</strong>
         </article>
         <article class="metric">
           <span class="metric-label">既知の脆弱性</span>
           <strong id="vulnerabilityCount">0</strong>
         </article>
+      </section>
+
+      <section class="print-report" aria-label="印刷用レポート">
+        <div class="report-head">
+          <div>
+            <p class="eyebrow">SBOM Review Report</p>
+            <h2>SBON レビュー要約</h2>
+          </div>
+          <dl>
+            <div>
+              <dt>形式</dt>
+              <dd id="reportFormat">未読み込み</dd>
+            </div>
+            <div>
+              <dt>出力日</dt>
+              <dd id="reportDate">-</dd>
+            </div>
+          </dl>
+        </div>
+        <p id="reportSummary">SBOMを読み込むと、印刷用の要約を表示します。</p>
+        <div class="report-table-wrap">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>名称</th>
+                <th>バージョン</th>
+                <th>確認優先度</th>
+                <th>用途</th>
+                <th>主な確認ポイント</th>
+              </tr>
+            </thead>
+            <tbody id="reportRows"></tbody>
+          </table>
+        </div>
       </section>
 
       <section class="workspace">
@@ -71,8 +105,8 @@
             <input id="searchInput" type="search" placeholder="例: openssl, GPL, CVE" />
           </div>
           <div class="field">
-            <label for="riskFilter">リスク</label>
-            <select id="riskFilter">
+            <label for="priorityFilter">確認優先度</label>
+            <select id="priorityFilter">
               <option value="all">すべて</option>
               <option value="high">高</option>
               <option value="medium">中</option>
@@ -108,7 +142,7 @@
                 <tr>
                   <th>名称</th>
                   <th>バージョン</th>
-                  <th>リスク</th>
+                  <th>確認優先度</th>
                   <th>用途</th>
                   <th>ライセンス</th>
                   <th>脆弱性</th>
@@ -141,14 +175,14 @@
     </template>
 
     <script src="./data/knowledge/packages.js"></script>
-    <script src="./data/knowledge/aliases.js"></script>
+    <script src="./data/knowledge/package-identifiers.js"></script>
     <script src="./data/knowledge/categories.js"></script>
     <script src="./data/knowledge/package-categories.js"></script>
     <script src="./data/knowledge/entries-ja.js"></script>
-    <script src="./data/knowledge/risk-rules.js"></script>
+    <script src="./data/knowledge/review-priority-rules.js"></script>
     <script src="./data/knowledge-base.js"></script>
     <script src="./samples/sample-cyclonedx.js"></script>
-    <script src="./js/risk.js"></script>
+    <script src="./js/review-priority.js"></script>
     <script src="./js/parser.js"></script>
     <script src="./js/export.js"></script>
     <script src="./js/ui.js"></script>

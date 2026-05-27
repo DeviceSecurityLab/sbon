@@ -14,13 +14,17 @@
       printButton: document.querySelector("#printButton"),
       csvButton: document.querySelector("#csvButton"),
       searchInput: document.querySelector("#searchInput"),
-      riskFilter: document.querySelector("#riskFilter"),
+      priorityFilter: document.querySelector("#priorityFilter"),
       categoryFilter: document.querySelector("#categoryFilter"),
       totalComponents: document.querySelector("#totalComponents"),
-      highRiskCount: document.querySelector("#highRiskCount"),
-      mediumRiskCount: document.querySelector("#mediumRiskCount"),
+      highPriorityCount: document.querySelector("#highPriorityCount"),
+      mediumPriorityCount: document.querySelector("#mediumPriorityCount"),
       vulnerabilityCount: document.querySelector("#vulnerabilityCount"),
       executiveSummary: document.querySelector("#executiveSummary"),
+      reportDate: document.querySelector("#reportDate"),
+      reportFormat: document.querySelector("#reportFormat"),
+      reportSummary: document.querySelector("#reportSummary"),
+      reportRows: document.querySelector("#reportRows"),
       componentRows: document.querySelector("#componentRows"),
       emptyRowTemplate: document.querySelector("#emptyRowTemplate"),
       detailView: document.querySelector("#detailView"),
@@ -60,7 +64,7 @@
       elements.printButton.addEventListener("click", () => window.print());
       elements.csvButton.addEventListener("click", () => exporter.exportCsv(state.components));
       elements.searchInput.addEventListener("input", render);
-      elements.riskFilter.addEventListener("change", render);
+      elements.priorityFilter.addEventListener("change", render);
       elements.categoryFilter.addEventListener("change", render);
 
       for (const tab of elements.tabs) {
@@ -93,22 +97,23 @@
     function render() {
       const filtered = getFilteredComponents();
       renderSummary();
+      renderPrintReport();
       renderRows(filtered);
       renderDetail();
       renderTree();
     }
 
     function renderSummary() {
-      const high = state.components.filter((component) => component.risk === "high").length;
-      const medium = state.components.filter((component) => component.risk === "medium").length;
+      const high = state.components.filter((component) => component.reviewPriority === "high").length;
+      const medium = state.components.filter((component) => component.reviewPriority === "medium").length;
       const vulnerabilityCount = state.components.reduce(
         (total, component) => total + component.vulnerabilities.length,
         0,
       );
 
       elements.totalComponents.textContent = state.components.length;
-      elements.highRiskCount.textContent = high;
-      elements.mediumRiskCount.textContent = medium;
+      elements.highPriorityCount.textContent = high;
+      elements.mediumPriorityCount.textContent = medium;
       elements.vulnerabilityCount.textContent = vulnerabilityCount;
       elements.formatLabel.textContent = state.format;
 
@@ -116,7 +121,51 @@
       elements.executiveSummary.textContent =
         state.components.length === 0
           ? "SBOMを読み込むと、調達・品質保証・セキュリティ管理向けの確認ポイントを表示します。"
-          : `このSBOMには${state.components.length}件のOSSコンポーネントが含まれます。高リスク${high}件、要確認${medium}件、既知の脆弱性${vulnerabilityCount}件です。総合リスクは「${overall}」として扱い、暗号・ネットワーク・OS基盤の項目を優先確認してください。`;
+          : `このSBOMには${state.components.length}件のOSSコンポーネントが含まれます。最優先確認${high}件、要確認${medium}件、既知の脆弱性${vulnerabilityCount}件です。総合的な確認優先度は「${overall}」として扱い、暗号・ネットワーク・OS基盤の項目を優先確認してください。`;
+    }
+
+    function renderPrintReport() {
+      const high = state.components.filter((component) => component.reviewPriority === "high").length;
+      const medium = state.components.filter((component) => component.reviewPriority === "medium").length;
+      const vulnerabilityCount = state.components.reduce(
+        (total, component) => total + component.vulnerabilities.length,
+        0,
+      );
+      const rows = state.components
+        .filter((component) => component.reviewPriority !== "low")
+        .sort(
+          (a, b) =>
+            reviewPriorityRank(a.reviewPriority) - reviewPriorityRank(b.reviewPriority) ||
+            a.name.localeCompare(b.name),
+        )
+        .slice(0, 20);
+
+      elements.reportFormat.textContent = state.format;
+      elements.reportDate.textContent = new Date().toLocaleDateString("ja-JP");
+      elements.reportSummary.textContent =
+        state.components.length === 0
+          ? "SBOMを読み込むと、印刷用の要約を表示します。"
+          : `対象コンポーネントは${state.components.length}件です。最優先確認${high}件、要確認${medium}件、既知の脆弱性${vulnerabilityCount}件を確認しました。`;
+      elements.reportRows.textContent = "";
+
+      if (rows.length === 0) {
+        const row = document.createElement("tr");
+        row.innerHTML = '<td colspan="5" class="empty-cell">印刷対象の最優先確認・要確認コンポーネントはありません。</td>';
+        elements.reportRows.append(row);
+        return;
+      }
+
+      for (const component of rows) {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${escapeHtml(component.name)}</td>
+          <td>${escapeHtml(component.version)}</td>
+          <td>${reviewPriorityLabel(component.reviewPriority)}</td>
+          <td>${escapeHtml(component.categoryLabel)}</td>
+          <td>${escapeHtml(component.findings[0] || "確認ポイントなし")}</td>
+        `;
+        elements.reportRows.append(row);
+      }
     }
 
     function renderRows(components) {
@@ -134,7 +183,7 @@
         row.innerHTML = `
           <td><span class="pkg-name">${escapeHtml(component.name)}</span><span class="pkg-id">${escapeHtml(component.purl || component.id)}</span></td>
           <td>${escapeHtml(component.version)}</td>
-          <td><span class="badge ${component.risk}">${riskLabel(component.risk)}</span></td>
+          <td><span class="badge ${component.reviewPriority}">${reviewPriorityLabel(component.reviewPriority)}</span></td>
           <td class="category">${escapeHtml(component.categoryLabel)}</td>
           <td>${escapeHtml(component.licenses.join(", ") || "未確認")}</td>
           <td>${component.vulnerabilities.length}</td>
@@ -163,7 +212,7 @@
             <h3>${escapeHtml(component.name)}</h3>
             <span class="pkg-id">${escapeHtml(component.purl || component.id)}</span>
           </div>
-          <span class="badge ${component.risk}">${riskLabel(component.risk)}</span>
+          <span class="badge ${component.reviewPriority}">${reviewPriorityLabel(component.reviewPriority)}</span>
         </div>
         <div class="detail-section">
           <h4>日本語説明</h4>
@@ -171,7 +220,7 @@
         </div>
         <div class="detail-section">
           <h4>確認ポイント</h4>
-          ${renderList(component.findings.length ? component.findings : ["現時点で主要なリスク指標は検出されていません。"])}
+          ${renderList(component.findings.length ? component.findings : ["現時点で主要な確認事項は検出されていません。"])}
         </div>
         <div class="detail-section">
           <h4>知識ベース照合</h4>
@@ -237,7 +286,7 @@
 
     function getFilteredComponents() {
       const query = elements.searchInput.value.trim().toLowerCase();
-      const risk = elements.riskFilter.value;
+      const reviewPriority = elements.priorityFilter.value;
       const category = elements.categoryFilter.value;
 
       return state.components.filter((component) => {
@@ -252,7 +301,7 @@
           .toLowerCase();
         return (
           (!query || haystack.includes(query)) &&
-          (risk === "all" || component.risk === risk) &&
+          (reviewPriority === "all" || component.reviewPriority === reviewPriority) &&
           (category === "all" || component.category === category)
         );
       });
@@ -274,8 +323,8 @@
     };
   }
 
-  function riskLabel(risk) {
-    return { high: "高", medium: "中", low: "低" }[risk] || "不明";
+  function reviewPriorityLabel(reviewPriority) {
+    return { high: "高", medium: "中", low: "低" }[reviewPriority] || "不明";
   }
 
   function severityLabel(severity) {
@@ -287,7 +336,11 @@
       return "知識ベースには未登録です。用途、保守責任、影響範囲を確認してください。";
     }
 
-    return `package_id: ${component.packageId}, 照合方法: ${component.matchMethod}, 信頼度: ${component.matchConfidence}`;
+    return `package_id: ${component.packageId}, 照合方法: ${component.matchMethod}, 照合値: ${component.matchValue || "-"}, 信頼度: ${component.matchConfidence}`;
+  }
+
+  function reviewPriorityRank(reviewPriority) {
+    return { high: 0, medium: 1, low: 2 }[reviewPriority] ?? 9;
   }
 
   function escapeHtml(value) {

@@ -3,18 +3,19 @@
     const match = matchPackage(component);
     const knowledge = buildKnowledge(match);
     const findings = buildFindings(component, match, knowledge);
-    const risk = scoreRisk(component, findings);
+    const reviewPriority = scoreReviewPriority(component, findings);
 
     return {
       ...component,
       packageId: match.packageId,
       matchMethod: match.method,
+      matchValue: match.value,
       matchConfidence: match.confidence,
       category: knowledge.category,
       categoryLabel: knowledge.label,
       explanation: knowledge.explanation,
       findings,
-      risk,
+      reviewPriority,
     };
   }
 
@@ -23,32 +24,39 @@
     const purlName = extractPurlName(component.purl);
     const normalizedName = normalizeName(component.name);
 
-    for (const alias of knowledgeBase.aliases) {
-      if (alias.aliasType === "purl-name" && purlName && normalizeName(alias.value) === purlName) {
+    for (const identifier of knowledgeBase.packageIdentifiers) {
+      if (
+        identifier.identifierType === "purl-name" &&
+        purlName &&
+        normalizeName(identifier.value) === purlName
+      ) {
         return {
-          packageId: alias.packageId,
+          packageId: identifier.packageId,
           method: "purl-name",
-          confidence: alias.confidence,
+          value: identifier.value,
+          confidence: identifier.confidence,
         };
       }
     }
 
-    for (const alias of knowledgeBase.aliases) {
-      if (alias.aliasType === "name" && normalizeName(alias.value) === normalizedName) {
+    for (const identifier of knowledgeBase.packageIdentifiers) {
+      if (identifier.identifierType === "name" && normalizeName(identifier.value) === normalizedName) {
         return {
-          packageId: alias.packageId,
+          packageId: identifier.packageId,
           method: "name",
-          confidence: alias.confidence,
+          value: identifier.value,
+          confidence: identifier.confidence,
         };
       }
     }
 
-    for (const alias of knowledgeBase.aliases) {
-      if (alias.aliasType === "regex" && new RegExp(alias.value, "i").test(component.name)) {
+    for (const identifier of knowledgeBase.packageIdentifiers) {
+      if (identifier.identifierType === "regex" && new RegExp(identifier.value, "i").test(component.name)) {
         return {
-          packageId: alias.packageId,
+          packageId: identifier.packageId,
           method: "regex",
-          confidence: alias.confidence,
+          value: identifier.value,
+          confidence: identifier.confidence,
         };
       }
     }
@@ -56,6 +64,7 @@
     return {
       packageId: null,
       method: "none",
+      value: "",
       confidence: "low",
     };
   }
@@ -92,7 +101,7 @@
     if (component.vulnerabilities.length > 0) {
       findings.push("既知の脆弱性があります");
     }
-    findings.push(...applyRiskRules(component, match));
+    findings.push(...applyReviewPriorityRules(component, match));
     if (component.licenses.length === 0 || component.licenses.includes("NOASSERTION")) {
       findings.push("ライセンス情報が未確認です");
     }
@@ -102,16 +111,16 @@
     return findings;
   }
 
-  function applyRiskRules(component, match) {
+  function applyReviewPriorityRules(component, match) {
     if (!match.packageId) return [];
 
-    return window.SBON_KNOWLEDGE_BASE.riskRules
+    return window.SBON_KNOWLEDGE_BASE.reviewPriorityRules
       .filter((rule) => rule.enabled && rule.packageId === match.packageId)
-      .filter((rule) => matchesRiskRule(component, rule))
+      .filter((rule) => matchesReviewPriorityRule(component, rule))
       .map((rule) => rule.findingJa);
   }
 
-  function matchesRiskRule(component, rule) {
+  function matchesReviewPriorityRule(component, rule) {
     if (rule.ruleType === "version-prefix") {
       const version = String(component.version || "");
       return rule.values.some((value) => version.startsWith(value));
@@ -119,7 +128,7 @@
     return false;
   }
 
-  function scoreRisk(component, findings) {
+  function scoreReviewPriority(component, findings) {
     if (
       component.vulnerabilities.some((item) => item.severity === "critical" || item.severity === "high") ||
       findings.some((finding) => finding.includes("古い"))
@@ -149,10 +158,10 @@
     return String(name || "").trim().toLowerCase();
   }
 
-  window.SBON_RISK = {
+  window.SBON_REVIEW_PRIORITY = {
     enrichComponent,
     matchPackage,
     normalizeSeverity,
-    scoreRisk,
+    scoreReviewPriority,
   };
 })();

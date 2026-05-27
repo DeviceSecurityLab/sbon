@@ -11,15 +11,16 @@ function loadCore() {
 
   for (const file of [
     "data/knowledge/packages.js",
-    "data/knowledge/aliases.js",
+    "data/knowledge/package-identifiers.js",
     "data/knowledge/categories.js",
     "data/knowledge/package-categories.js",
     "data/knowledge/entries-ja.js",
-    "data/knowledge/risk-rules.js",
+    "data/knowledge/review-priority-rules.js",
     "data/knowledge-base.js",
     "samples/sample-cyclonedx.js",
-    "js/risk.js",
+    "js/review-priority.js",
     "js/parser.js",
+    "js/export.js",
   ]) {
     vm.runInNewContext(fs.readFileSync(file, "utf8"), context, { filename: file });
   }
@@ -29,6 +30,7 @@ function loadCore() {
 
 function testCycloneDxSample() {
   const window = loadCore();
+  assert.ok(Array.isArray(window.SBON_KNOWLEDGE_BASE.packageIdentifiers));
   const normalized = window.SBON_PARSER.normalizeSbom(window.SBON_SAMPLE_SBOM);
 
   assert.strictEqual(normalized.format, "CycloneDX 1.5");
@@ -39,8 +41,9 @@ function testCycloneDxSample() {
   assert.ok(openssl);
   assert.strictEqual(openssl.packageId, "pkg.openssl");
   assert.strictEqual(openssl.matchMethod, "purl-name");
+  assert.strictEqual(openssl.matchValue, "openssl");
   assert.strictEqual(openssl.matchConfidence, "high");
-  assert.strictEqual(openssl.risk, "high");
+  assert.strictEqual(openssl.reviewPriority, "high");
   assert.strictEqual(openssl.category, "crypto");
   assert.deepStrictEqual(Array.from(openssl.vulnerabilities, (vulnerability) => vulnerability.id), [
     "CVE-2023-0286",
@@ -91,7 +94,7 @@ function testSpdxBasicPackage() {
   assert.ok(curl);
   assert.strictEqual(curl.packageId, null);
   assert.strictEqual(curl.category, "unknown");
-  assert.strictEqual(curl.risk, "medium");
+  assert.strictEqual(curl.reviewPriority, "medium");
 }
 
 function testAliasMatching() {
@@ -114,8 +117,9 @@ function testAliasMatching() {
   const libssl = normalized.components[0];
   assert.strictEqual(libssl.packageId, "pkg.openssl");
   assert.strictEqual(libssl.matchMethod, "regex");
+  assert.strictEqual(libssl.matchValue, "^(openssl|libssl|openssl-libs)$");
   assert.strictEqual(libssl.category, "crypto");
-  assert.strictEqual(libssl.risk, "low");
+  assert.strictEqual(libssl.reviewPriority, "low");
 }
 
 function testUnknownSbomError() {
@@ -126,11 +130,26 @@ function testUnknownSbomError() {
   );
 }
 
+function testCsvExportShape() {
+  const window = loadCore();
+  const normalized = window.SBON_PARSER.normalizeSbom(window.SBON_SAMPLE_SBOM);
+  const csv = window.SBON_EXPORT.buildCsv(normalized.components);
+
+  assert.ok(csv.startsWith('"component_id","name","version","type","purl"'));
+  assert.ok(csv.includes('"pkg.openssl"'));
+  assert.ok(csv.includes('"purl-name"'));
+  assert.ok(csv.includes('"openssl"'));
+  assert.ok(csv.includes('"CVE-2023-0286"'));
+  assert.ok(csv.includes("高深刻度の脆弱性があります"));
+  assert.ok(csv.includes("古いOpenSSL系列が使われている可能性があります"));
+}
+
 function run() {
   testCycloneDxSample();
   testSpdxBasicPackage();
   testAliasMatching();
   testUnknownSbomError();
+  testCsvExportShape();
   console.log("All tests passed");
 }
 

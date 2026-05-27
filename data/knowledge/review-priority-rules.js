@@ -1,6 +1,6 @@
-window.SBON_KNOWLEDGE_RISK_RULES = [
+window.SBON_KNOWLEDGE_REVIEW_PRIORITY_RULES = [
   {
-    id: "risk.openssl.legacy-series",
+    id: "priority.openssl.legacy-series",
     packageId: "pkg.openssl",
     ruleType: "version-prefix",
     values: ["1.0.", "1.1."],
@@ -10,7 +10,7 @@ window.SBON_KNOWLEDGE_RISK_RULES = [
     enabled: true,
   },
   {
-    id: "risk.busybox.old-series",
+    id: "priority.busybox.old-series",
     packageId: "pkg.busybox",
     ruleType: "version-prefix",
     values: [
@@ -33,7 +33,7 @@ window.SBON_KNOWLEDGE_RISK_RULES = [
     enabled: true,
   },
   {
-    id: "risk.linux-kernel.old-series",
+    id: "priority.linux-kernel.old-series",
     packageId: "pkg.linux-kernel",
     ruleType: "version-prefix",
     values: ["3.", "4.", "5.4."],
