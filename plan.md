@@ -23,6 +23,13 @@ SBONは、非エンジニアのSBOM利用者向けに、CycloneDX JSON / SPDX JS
 
 目的: 依存なしでブラウザだけで使える状態を保ちながら、入力対応と表示品質を上げる。
 
+### 0. 知識ベース設計
+
+- 説明辞書を単純に増やさない
+- `knowledge-base-design.md` に基づき、DB移行可能なデータモデルを先に固める
+- 当面は静的JSONで運用し、将来SQLiteへ移行できる形にする
+- パッケージ名だけでなく、PURL、CPE、エコシステム、別名を使って照合する
+
 ### 1. SBOMパーサの強化
 
 - CycloneDX 1.4 / 1.5 / 1.6 の主要フィールドに対応
@@ -38,12 +45,12 @@ SBONは、非エンジニアのSBOM利用者向けに、CycloneDX JSON / SPDX JS
 - 重大度を High / Medium / Low / Unknown で一貫表示
 - EOL判定は固定ルールとして扱い、外部DB連携までは行わない
 
-### 3. 日本語説明辞書の拡充
+### 3. 日本語知識ベースの初期構築
 
-- OpenSSL、BusyBox、glibc、Linux kernel以外の主要OSSを追加
-- curl、nginx、Apache HTTP Server、OpenSSH、zlib、SQLite、Python、Node.jsなどを優先
-- 各コンポーネントに「何に使われるか」「なぜ重要か」「確認すべきこと」を持たせる
-- 辞書は将来差し替えやすいJSON形式へ移す
+- `knowledge-base-design.md` のモデルに沿って、説明、別名、カテゴリ、リスクルールを分離する
+- OpenSSL、BusyBox、glibc、Linux kernelの4件だけを新形式へ移す
+- 各コンポーネントに「何に使われるか」「なぜ重要か」「確認すべきこと」「根拠」を持たせる
+- curl、nginx、Apache HTTP Server、OpenSSH、zlib、SQLite、Python、Node.jsなどは、スキーマと照合ロジックが固まってから追加する
 
 ### 4. レポート品質の改善
 
@@ -78,7 +85,7 @@ SBONは、非エンジニアのSBOM利用者向けに、CycloneDX JSON / SPDX JS
 ### 3. ファイル構成の整理
 
 - `app.js` を parser / risk / render / export に分割
-- 説明辞書を `data/package-knowledge.json` に移動
+- 説明・別名・カテゴリ・リスクルールを `data/knowledge/` 配下のJSONへ移動
 - サンプルSBOMを `samples/` に移動
 
 ## Phase 3: アプリ化
@@ -178,10 +185,10 @@ SBONは、非エンジニアのSBOM利用者向けに、CycloneDX JSON / SPDX JS
 
 直近で着手する順番:
 
-1. `app.js` の責務分割
-2. サンプルSBOMの追加
-3. パーサとリスク判定のユニットテスト
-4. 説明辞書のJSON化
+1. `app.js` の責務分割: 完了
+2. サンプルSBOMの追加: 着手
+3. パーサとリスク判定のユニットテスト: 着手
+4. 知識ベースJSONの初期スキーマ作成: 完了
 5. PDF/CSV出力の改善
 6. SBOM Diff Viewerの設計
 

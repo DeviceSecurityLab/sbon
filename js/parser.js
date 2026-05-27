@@ -1,0 +1,119 @@
+(function () {
+  function normalizeSbom(sbom) {
+    if (Array.isArray(sbom.components) || sbom.bomFormat === "CycloneDX") {
+      return normalizeCycloneDx(sbom);
+    }
+
+    if (Array.isArray(sbom.packages) || sbom.spdxVersion) {
+      return normalizeSpdx(sbom);
+    }
+
+    throw new Error("CycloneDX JSON または SPDX JSON として認識できません。");
+  }
+
+  function normalizeCycloneDx(sbom) {
+    const vulnerabilities = collectCycloneDxVulnerabilities(sbom.vulnerabilities || []);
+    const components = (sbom.components || []).map((component, index) => {
+      const id = component.bomRef || component.purl || `${component.name || "unknown"}-${index}`;
+      return window.SBON_RISK.enrichComponent({
+        id,
+        name: component.name || "名称不明",
+        version: component.version || "不明",
+        type: component.type || "不明",
+        licenses: parseCycloneDxLicenses(component.licenses),
+        purl: component.purl || id,
+        vulnerabilities: vulnerabilities.get(id) || vulnerabilities.get(component.purl) || [],
+      });
+    });
+
+    return {
+      format: `CycloneDX ${sbom.specVersion || ""}`.trim(),
+      components,
+      dependencies: new Map((sbom.dependencies || []).map((item) => [item.ref, item.dependsOn || []])),
+    };
+  }
+
+  function collectCycloneDxVulnerabilities(sourceVulnerabilities) {
+    const vulnerabilities = new Map();
+    for (const vulnerability of sourceVulnerabilities) {
+      const affectedRefs = (vulnerability.affects || []).map((item) => item.ref).filter(Boolean);
+      for (const ref of affectedRefs) {
+        const list = vulnerabilities.get(ref) || [];
+        list.push({
+          id: vulnerability.id || "Unknown CVE",
+          severity: window.SBON_RISK.normalizeSeverity(vulnerability.ratings?.[0]?.severity),
+          score: vulnerability.ratings?.[0]?.score || "",
+          description: vulnerability.description || "",
+        });
+        vulnerabilities.set(ref, list);
+      }
+    }
+    return vulnerabilities;
+  }
+
+  function normalizeSpdx(sbom) {
+    const packages = sbom.packages || [];
+    const relationships = sbom.relationships || [];
+    const dependencies = collectSpdxDependencies(relationships);
+    const components = packages.map((pkg, index) =>
+      window.SBON_RISK.enrichComponent({
+        id: pkg.SPDXID || `${pkg.name || "unknown"}-${index}`,
+        name: pkg.name || "名称不明",
+        version: pkg.versionInfo || "不明",
+        type: "package",
+        licenses: parseSpdxLicense(pkg),
+        purl: (pkg.externalRefs || []).find((ref) => ref.referenceType === "purl")?.referenceLocator || "",
+        vulnerabilities: [],
+      }),
+    );
+
+    return {
+      format: sbom.spdxVersion || "SPDX",
+      components,
+      dependencies,
+    };
+  }
+
+  function collectSpdxDependencies(relationships) {
+    const dependencies = new Map();
+    for (const relationship of relationships) {
+      if (!["DEPENDS_ON", "DEPENDENCY_OF", "CONTAINS"].includes(relationship.relationshipType)) {
+        continue;
+      }
+
+      const source = relationship.spdxElementId;
+      const target = relationship.relatedSpdxElement;
+      if (!source || !target) {
+        continue;
+      }
+
+      if (relationship.relationshipType === "DEPENDENCY_OF") {
+        appendDependency(dependencies, target, source);
+      } else {
+        appendDependency(dependencies, source, target);
+      }
+    }
+    return dependencies;
+  }
+
+  function appendDependency(dependencies, source, target) {
+    const list = dependencies.get(source) || [];
+    list.push(target);
+    dependencies.set(source, list);
+  }
+
+  function parseCycloneDxLicenses(licenses = []) {
+    return licenses
+      .map((item) => item.license?.id || item.license?.name || item.expression)
+      .filter(Boolean);
+  }
+
+  function parseSpdxLicense(pkg) {
+    const license = pkg.licenseConcluded || pkg.licenseDeclared;
+    return license ? [license] : [];
+  }
+
+  window.SBON_PARSER = {
+    normalizeSbom,
+  };
+})();
