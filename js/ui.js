@@ -308,7 +308,13 @@
         }
       }
 
-      renderDependencyDiff(dependencyChanges);
+      const graph = differ.diffDependencyGraph
+        ? differ.diffDependencyGraph(
+            { components: state.compareComponents, dependencies: state.compareDependencies },
+            { components: state.components, dependencies: state.dependencies },
+          )
+        : null;
+      renderDependencyDiff(dependencyChanges, graph);
     }
 
     function renderReleaseSummary(diff) {
@@ -332,7 +338,7 @@
       `;
     }
 
-    function renderDependencyDiff(dependencyChanges) {
+    function renderDependencyDiff(dependencyChanges, graph) {
       if (!elements.diffDependencies) return;
 
       const changes = dependencyChanges || { added: [], removed: [] };
@@ -342,23 +348,38 @@
         return;
       }
 
-      const section = (title, edges, kind) =>
-        edges.length
-          ? `<div class="diff-dep-group">
-              <p class="diff-dep-title">${title}（${edges.length}件）</p>
-              <ul class="plain-list">${edges
-                .map(
-                  (edge) =>
-                    `<li><span class="diff-badge ${kind}">${kind === "added" ? "追加" : "削除"}</span> ${escapeHtml(edge.from)} → ${escapeHtml(edge.to)}</li>`,
-                )
-                .join("")}</ul>
-            </div>`
-          : "";
-
+      const tree = graph && graph.roots.length ? renderDepDiffTree(graph) : "";
       elements.diffDependencies.innerHTML = `
         <h3 class="diff-dep-heading">依存関係の差分</h3>
-        ${section("追加された依存", changes.added, "added")}
-        ${section("削除された依存", changes.removed, "removed")}
+        <p class="diff-dep-title">依存先の追加${changes.added.length}件 / 削除${changes.removed.length}件。ツリー内で <span class="diff-badge added">追加</span> / <span class="diff-badge removed">削除</span> を強調します。</p>
+        ${tree}
+      `;
+    }
+
+    function renderDepDiffTree(graph) {
+      const items = graph.roots.map((root) => renderDepDiffNode(graph, root, new Set([root]))).join("");
+      return `<ul class="tree-list dep-diff-tree">${items}</ul>`;
+    }
+
+    function renderDepDiffNode(graph, key, seen, status) {
+      const name = graph.nodes.get(key) || key;
+      const badge = status && status !== "unchanged" ? depStatusBadge(status) : "";
+      const children = graph.adjacency.get(key) || [];
+      const childItems = children
+        .map((child) => {
+          if (seen.has(child.toKey)) {
+            return `<li><span class="tree-node">${escapeHtml(graph.nodes.get(child.toKey) || child.toName)}</span> ${depStatusBadge(child.status)} <span class="tree-ref">循環参照</span></li>`;
+          }
+          const nextSeen = new Set(seen);
+          nextSeen.add(child.toKey);
+          return renderDepDiffNode(graph, child.toKey, nextSeen, child.status);
+        })
+        .join("");
+      return `
+        <li>
+          <span class="tree-node">${escapeHtml(name)}</span> ${badge}
+          ${childItems ? `<ul class="tree-list">${childItems}</ul>` : ""}
+        </li>
       `;
     }
 
@@ -788,6 +809,12 @@
 
   function reviewStatusRank(status) {
     return { "action-required": 0, "in-progress": 1, unreviewed: 2, approved: 3 }[status] ?? 9;
+  }
+
+  function depStatusBadge(status) {
+    const labels = { added: "追加", removed: "削除", unchanged: "" };
+    if (!labels[status]) return "";
+    return `<span class="diff-badge ${status}">${labels[status]}</span>`;
   }
 
   function diffChangeBadge(entry) {

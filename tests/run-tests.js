@@ -308,6 +308,16 @@ function testDiffLogic() {
   assert.ok(release.points.some((p) => p.text.includes("新規に追加") && p.text.includes("linux-kernel")));
   assert.ok(release.points.some((p) => p.text.includes("削除された") && p.text.includes("curl")));
   assert.ok(release.points.some((p) => p.text.includes("依存関係の変化")));
+
+  // 依存関係差分のツリー構造。旧サンプルは依存なし → 全エッジ added。
+  const graph = window.SBON_DIFF.diffDependencyGraph(before, after);
+  assert.strictEqual(graph.hasChanges, true);
+  assert.ok(graph.roots.includes("ref:product-firmware"), "依存元の起点が根になる");
+  const opensslChildren = graph.adjacency.get("pkg:generic/openssl") || [];
+  assert.ok(
+    opensslChildren.some((c) => c.toKey === "pkg:generic/zlib" && c.status === "added"),
+    "openssl→zlib が追加エッジ",
+  );
 }
 
 function testDiffLicenseAndCsv() {
@@ -440,6 +450,7 @@ function testUiInteractions() {
   assert.strictEqual(get("#diffSection").hidden, false);
   assert.ok(get("#diffSummary").textContent.includes("確認優先度の上昇1件"));
   assert.ok(get("#diffDependencies").innerHTML.includes("依存関係の差分"));
+  assert.ok(get("#diffDependencies").innerHTML.includes("dep-diff-tree"), "依存差分をツリーで描画");
   assert.ok(get("#diffReleaseSummary").innerHTML.includes("リリースレビュー向け要約"));
   assert.ok(get("#diffReleaseSummary").innerHTML.includes("確認優先度が上がった"));
 

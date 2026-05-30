@@ -548,6 +548,14 @@ main {
   font-size: 13px;
 }
 
+.dep-diff-tree {
+  margin-top: 10px;
+}
+
+.dep-diff-tree .tree-node {
+  margin-right: 4px;
+}
+
 .review-badge {
   display: inline-block;
   padding: 2px 8px;

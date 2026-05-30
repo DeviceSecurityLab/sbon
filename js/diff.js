@@ -139,10 +139,52 @@
       for (const target of targets || []) {
         const to = resolver(target);
         const id = `${from.key}=>${to.key}`;
-        if (!edges.has(id)) edges.set(id, { from: from.name, to: to.name });
+        if (!edges.has(id)) {
+          edges.set(id, { fromKey: from.key, toKey: to.key, from: from.name, to: to.name });
+        }
       }
     });
     return edges;
+  }
+
+  // 新旧の依存エッジを統合し、ツリー描画用の構造を返す。
+  // 各エッジに status（added / removed / unchanged）を付与する。
+  function diffDependencyGraph(before, after) {
+    const beforeEdges = edgeMap(before?.dependencies, before?.components || []);
+    const afterEdges = edgeMap(after?.dependencies, after?.components || []);
+
+    const nodes = new Map(); // key -> 表示名
+    const adjacency = new Map(); // fromKey -> [{ toKey, toName, status }]
+    const childKeys = new Set();
+
+    const ids = new Set([...beforeEdges.keys(), ...afterEdges.keys()]);
+    for (const id of ids) {
+      const edge = afterEdges.get(id) || beforeEdges.get(id);
+      const status =
+        afterEdges.has(id) && beforeEdges.has(id) ? "unchanged" : afterEdges.has(id) ? "added" : "removed";
+
+      nodes.set(edge.fromKey, edge.from);
+      nodes.set(edge.toKey, edge.to);
+      if (!adjacency.has(edge.fromKey)) adjacency.set(edge.fromKey, []);
+      adjacency.get(edge.fromKey).push({ toKey: edge.toKey, toName: edge.to, status });
+      childKeys.add(edge.toKey);
+    }
+
+    for (const children of adjacency.values()) {
+      children.sort((a, b) => String(a.toName).localeCompare(String(b.toName), "ja"));
+    }
+
+    const allKeys = [...nodes.keys()];
+    let roots = allKeys.filter((key) => !childKeys.has(key));
+    // 循環などで根が見つからない場合は、依存元になっているノードを根として扱う。
+    if (!roots.length) roots = [...adjacency.keys()];
+    roots.sort((a, b) => String(nodes.get(a)).localeCompare(String(nodes.get(b)), "ja"));
+
+    const hasChanges = [...adjacency.values()].some((children) =>
+      children.some((child) => child.status !== "unchanged"),
+    );
+
+    return { nodes, adjacency, roots, hasChanges };
   }
 
   function buildRefResolver(components) {
@@ -251,5 +293,6 @@
     diffSboms,
     componentKey,
     buildReleaseSummary,
+    diffDependencyGraph,
   };
 })();
