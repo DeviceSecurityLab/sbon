@@ -99,6 +99,55 @@ select:focus-visible,
   box-shadow: 0 2px 8px rgba(20, 108, 148, 0.15);
 }
 
+.trial-tag {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 8px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--medium-bg);
+  color: var(--medium);
+  border: 1px solid var(--medium);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.trial-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--medium);
+  border-left-width: 5px;
+  border-radius: 8px;
+  background: var(--medium-bg);
+  color: var(--medium);
+}
+
+.trial-notice p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  font-weight: 600;
+}
+
+.trial-notice strong {
+  font-weight: 800;
+}
+
+.trial-notice-tag {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--medium);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
 .eyebrow {
   margin: 0 0 2px;
   color: var(--accent);
@@ -931,6 +980,7 @@ tbody tr.is-selected {
 @media print {
   .topbar,
   .hero-banner,
+  .trial-notice,
   .input-band,
   .filters,
   .component-panel,
