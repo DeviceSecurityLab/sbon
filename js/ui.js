@@ -10,8 +10,45 @@
       compareFormat: "",
       compareComponents: null,
       compareDependencies: null,
-      reviews: review ? review.createReviewStore() : null,
+      reviews: review ? review.createReviewStore(() => persistReviews()) : null,
     };
+
+    const REVIEW_STORAGE_KEY = "sbon.reviews.v1";
+
+    function reviewStorage() {
+      try {
+        return typeof window !== "undefined" && window.localStorage ? window.localStorage : null;
+      } catch (error) {
+        return null; // プライベートモード等で localStorage が例外になる場合に備える。
+      }
+    }
+
+    function persistReviews() {
+      const storage = reviewStorage();
+      if (!storage || !state.reviews) return;
+      try {
+        storage.setItem(REVIEW_STORAGE_KEY, JSON.stringify(state.reviews.toJSON()));
+      } catch (error) {
+        /* 保存に失敗しても操作は継続する。 */
+      }
+    }
+
+    function restoreReviews() {
+      const storage = reviewStorage();
+      if (!storage || !state.reviews) return;
+      let raw;
+      try {
+        raw = storage.getItem(REVIEW_STORAGE_KEY);
+      } catch (error) {
+        return;
+      }
+      if (!raw) return;
+      try {
+        state.reviews.loadJSON(JSON.parse(raw));
+      } catch (error) {
+        /* 壊れた保存データは無視する。 */
+      }
+    }
 
     function reviewKey(component) {
       if (differ && differ.componentKey) return differ.componentKey(component);
@@ -43,6 +80,7 @@
       loadReviewButton: document.querySelector("#loadReviewButton"),
       reviewFileInput: document.querySelector("#reviewFileInput"),
       reviewSummary: document.querySelector("#reviewSummary"),
+      reviewAlert: document.querySelector("#reviewAlert"),
       searchInput: document.querySelector("#searchInput"),
       priorityFilter: document.querySelector("#priorityFilter"),
       categoryFilter: document.querySelector("#categoryFilter"),
@@ -68,6 +106,7 @@
     };
 
     function start() {
+      restoreReviews();
       bindEvents();
       render();
     }
@@ -535,6 +574,7 @@
     function renderListMeta(visibleCount) {
       elements.componentCount.textContent = `${visibleCount} / ${state.components.length}件表示`;
       renderReviewSummary();
+      renderReviewAlert();
       for (const button of elements.sortButtons) {
         const active = button.dataset.sort === state.sortKey;
         button.classList.toggle("is-active", active);
@@ -554,6 +594,24 @@
       if (summary.approved) parts.push(`承認${summary.approved}`);
       if (summary["in-progress"]) parts.push(`確認中${summary["in-progress"]}`);
       elements.reviewSummary.textContent = parts.length ? `レビュー: ${parts.join(" / ")}` : "";
+    }
+
+    function renderReviewAlert() {
+      if (!elements.reviewAlert) return;
+      if (!state.reviews) {
+        elements.reviewAlert.hidden = true;
+        return;
+      }
+      const pending = state.components.filter(
+        (component) => component.reviewPriority === "high" && reviewStatusOf(component) === "unreviewed",
+      ).length;
+      if (pending === 0) {
+        elements.reviewAlert.hidden = true;
+        elements.reviewAlert.textContent = "";
+        return;
+      }
+      elements.reviewAlert.hidden = false;
+      elements.reviewAlert.textContent = `最優先確認の項目に未確認が${pending}件あります。確認ステータスを更新してレビューを完了してください。`;
     }
 
     function renderDetail(visibleComponents = state.components) {

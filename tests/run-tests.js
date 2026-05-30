@@ -32,7 +32,16 @@ function loadCore() {
   return context.window;
 }
 
-function loadAppWithDom() {
+function mockLocalStorage(backing = new Map()) {
+  return {
+    getItem: (key) => (backing.has(key) ? backing.get(key) : null),
+    setItem: (key, value) => backing.set(key, String(value)),
+    removeItem: (key) => backing.delete(key),
+    _backing: backing,
+  };
+}
+
+function loadAppWithDom(localStorage = mockLocalStorage()) {
   const events = new Map();
   const elements = new Map();
 
@@ -94,7 +103,7 @@ function loadAppWithDom() {
   };
 
   const context = {
-    window: { print() {} },
+    window: { print() {}, localStorage },
     document,
     console,
     Blob: function Blob() {},
@@ -126,7 +135,7 @@ function loadAppWithDom() {
     vm.runInNewContext(fs.readFileSync(file, "utf8"), context, { filename: file });
   }
 
-  return { events, get };
+  return { events, get, localStorage };
 }
 
 function testCycloneDxSample() {
@@ -413,7 +422,8 @@ function testCsvExportShape() {
 }
 
 function testUiInteractions() {
-  const { events, get } = loadAppWithDom();
+  const sharedStorage = mockLocalStorage();
+  const { events, get } = loadAppWithDom(sharedStorage);
 
   events.get("#loadSampleButton:click")();
   assert.strictEqual(get("#componentCount").textContent, "4 / 4件表示");
@@ -423,13 +433,24 @@ function testUiInteractions() {
   assert.strictEqual(get("#componentCount").textContent, "4 / 4件表示");
   assert.ok(get("#loadStatus").textContent.includes("CycloneDX"));
 
-  // レビュー: 選択中コンポーネントのステータスを変更すると一覧の要約に反映される。
+  // 未確認の最優先項目アラート: opensslが高優先度かつ未確認なので表示される。
+  assert.strictEqual(get("#reviewAlert").hidden, false);
+  assert.ok(get("#reviewAlert").textContent.includes("最優先確認"));
+
+  // レビュー: 選択中コンポーネント（openssl）のステータスを変更すると一覧の要約に反映される。
   const reviewSelect = get("#reviewStatusSelect");
   reviewSelect.value = "approved";
   events.get("#reviewStatusSelect:change")();
   assert.ok(get("#reviewSummary").textContent.includes("承認1"));
+  // 変更は localStorage に自動保存される。
+  assert.ok(sharedStorage.getItem("sbon.reviews.v1"), "レビューが自動保存される");
   // レビュー結果の保存ボタンが例外なく動作する。
   events.get("#saveReviewButton:click")();
+
+  // 別セッション（同じ localStorage）でも自動保存されたレビューが復元される。
+  const reloaded = loadAppWithDom(sharedStorage);
+  reloaded.events.get("#loadSampleButton:click")();
+  assert.ok(reloaded.get("#reviewSummary").textContent.includes("承認1"), "再読み込みで復元");
 
   get("#searchInput").value = "openssl";
   events.get("#searchInput:input")();

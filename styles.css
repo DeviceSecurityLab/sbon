@@ -590,6 +590,18 @@ main {
   font-weight: 700;
 }
 
+.review-alert {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--high);
+  border-left-width: 5px;
+  border-radius: 6px;
+  background: var(--high-bg);
+  color: var(--high);
+  font-size: 14px;
+  font-weight: 700;
+}
+
 .review-edit .review-controls {
   display: grid;
   gap: 12px;

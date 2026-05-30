@@ -17,8 +17,9 @@
     return STATUSES.includes(status) ? status : "unreviewed";
   }
 
-  function createReviewStore() {
+  function createReviewStore(onChange) {
     const entries = new Map();
+    const notify = typeof onChange === "function" ? onChange : function () {};
 
     function get(key) {
       return entries.get(key) || { status: "unreviewed", note: "" };
@@ -31,6 +32,7 @@
       } else {
         entries.set(key, { status: entry.status, note: entry.note });
       }
+      notify();
     }
 
     function setStatus(key, status) {
@@ -70,10 +72,12 @@
         if (!value || typeof value !== "object") continue;
         commit(key, { status: normalizeStatus(value.status), note: String(value.note || "") });
       }
+      notify();
     }
 
     function clear() {
       entries.clear();
+      notify();
     }
 
     function size() {
