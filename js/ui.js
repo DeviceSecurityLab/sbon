@@ -7,6 +7,8 @@
       selectedId: null,
       sortKey: "priority",
       sortDirection: "asc",
+      page: 1,
+      totalPages: 1,
       compareFormat: "",
       compareComponents: null,
       compareDependencies: null,
@@ -14,7 +16,7 @@
     };
 
     const REVIEW_STORAGE_KEY = "sbon.reviews.v1";
-    const MAX_RENDERED_ROWS = 500;
+    const PAGE_SIZE = 100;
 
     function reviewStorage() {
       try {
@@ -84,7 +86,10 @@
       reviewFileInput: document.querySelector("#reviewFileInput"),
       reviewSummary: document.querySelector("#reviewSummary"),
       reviewAlert: document.querySelector("#reviewAlert"),
-      listLimitNotice: document.querySelector("#listLimitNotice"),
+      pagination: document.querySelector("#pagination"),
+      prevPageButton: document.querySelector("#prevPageButton"),
+      nextPageButton: document.querySelector("#nextPageButton"),
+      pageInfo: document.querySelector("#pageInfo"),
       searchInput: document.querySelector("#searchInput"),
       priorityFilter: document.querySelector("#priorityFilter"),
       categoryFilter: document.querySelector("#categoryFilter"),
@@ -185,10 +190,16 @@
           if (file) loadReviewFile(file);
         });
       }
-      elements.searchInput.addEventListener("input", render);
-      elements.priorityFilter.addEventListener("change", render);
-      elements.categoryFilter.addEventListener("change", render);
+      elements.searchInput.addEventListener("input", renderFromFirstPage);
+      elements.priorityFilter.addEventListener("change", renderFromFirstPage);
+      elements.categoryFilter.addEventListener("change", renderFromFirstPage);
       elements.resetFiltersButton.addEventListener("click", resetFilters);
+      if (elements.prevPageButton) {
+        elements.prevPageButton.addEventListener("click", () => goToPage(state.page - 1));
+      }
+      if (elements.nextPageButton) {
+        elements.nextPageButton.addEventListener("click", () => goToPage(state.page + 1));
+      }
 
       for (const button of elements.sortButtons) {
         button.addEventListener("click", () => {
@@ -229,6 +240,7 @@
       state.components = normalized.components;
       state.dependencies = normalized.dependencies;
       state.selectedId = state.components[0]?.id || null;
+      state.page = 1;
       showLoadStatus(
         `${sourceName ? `「${sourceName}」を` : ""}${normalized.format} として読み込みました。コンポーネント${normalized.components.length}件。`,
         normalized.components.length === 0 ? "warning" : "success",
@@ -554,16 +566,22 @@
 
     function renderRows(components) {
       elements.componentRows.textContent = "";
-      updateListLimitNotice(components.length);
 
-      if (components.length === 0) {
+      // 巨大なSBOMでも一覧描画を軽く保つため、1ページ単位で表示する。
+      // CSV・PDF・要約・詳細は全件を対象にしたままにする。
+      const total = components.length;
+      state.totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+      if (state.page > state.totalPages) state.page = state.totalPages;
+      if (state.page < 1) state.page = 1;
+      renderPagination(total);
+
+      if (total === 0) {
         elements.componentRows.append(elements.emptyRowTemplate.content.cloneNode(true));
         return;
       }
 
-      // 巨大なSBOMでも一覧描画を軽く保つため、表示行数に上限を設ける。
-      // CSV・PDF・要約・詳細は全件を対象にしたままにする。
-      const visible = components.length > MAX_RENDERED_ROWS ? components.slice(0, MAX_RENDERED_ROWS) : components;
+      const start = (state.page - 1) * PAGE_SIZE;
+      const visible = components.slice(start, start + PAGE_SIZE);
 
       for (const component of visible) {
         const row = document.createElement("tr");
@@ -589,15 +607,33 @@
       }
     }
 
-    function updateListLimitNotice(total) {
-      if (!elements.listLimitNotice) return;
-      if (total > MAX_RENDERED_ROWS) {
-        elements.listLimitNotice.hidden = false;
-        elements.listLimitNotice.textContent = `件数が多いため、一覧は先頭${MAX_RENDERED_ROWS}件のみ表示しています（該当${total}件）。検索や絞り込みで件数を減らせます。CSV・PDF・要約には全件が反映されます。`;
-      } else {
-        elements.listLimitNotice.hidden = true;
-        elements.listLimitNotice.textContent = "";
+    function renderPagination(total) {
+      if (!elements.pagination) return;
+      if (total <= PAGE_SIZE) {
+        elements.pagination.hidden = true;
+        if (elements.pageInfo) elements.pageInfo.textContent = "";
+        return;
       }
+      elements.pagination.hidden = false;
+      const start = (state.page - 1) * PAGE_SIZE + 1;
+      const end = Math.min(state.page * PAGE_SIZE, total);
+      if (elements.pageInfo) {
+        elements.pageInfo.textContent = `${state.page} / ${state.totalPages}ページ（${start}–${end}件目 / 全${total}件）`;
+      }
+      if (elements.prevPageButton) elements.prevPageButton.disabled = state.page <= 1;
+      if (elements.nextPageButton) elements.nextPageButton.disabled = state.page >= state.totalPages;
+    }
+
+    function renderFromFirstPage() {
+      state.page = 1;
+      render();
+    }
+
+    function goToPage(targetPage) {
+      const next = Math.min(Math.max(1, targetPage), state.totalPages);
+      if (next === state.page) return;
+      state.page = next;
+      render();
     }
 
     function renderListMeta(visibleCount) {
@@ -843,6 +879,7 @@
         state.sortKey = sortKey;
         state.sortDirection = sortKey === "vulnerabilities" ? "desc" : "asc";
       }
+      state.page = 1;
       render();
     }
 
@@ -850,6 +887,7 @@
       elements.searchInput.value = "";
       elements.priorityFilter.value = "all";
       elements.categoryFilter.value = "all";
+      state.page = 1;
       render();
     }
 

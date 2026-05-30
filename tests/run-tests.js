@@ -465,7 +465,7 @@ function testCsvExportShape() {
 }
 
 function testLargeListRendering() {
-  const { get, window } = loadAppWithDom();
+  const { get, events, window } = loadAppWithDom();
   const viewer = window.SBON_UI.createViewer({
     parser: window.SBON_PARSER,
     exporter: window.SBON_EXPORT,
@@ -487,17 +487,29 @@ function testLargeListRendering() {
   }
   viewer.loadSbom({ bomFormat: "CycloneDX", specVersion: "1.5", components }, "巨大SBOM");
 
-  // 件数表示は全件、ただし一覧描画は上限で打ち切り、通知を出す。
+  // 件数表示は全件。1ページ100件なので7ページに分割し、ページ送りで全件にアクセスできる。
   assert.strictEqual(get("#componentCount").textContent, "650 / 650件表示");
-  assert.strictEqual(get("#listLimitNotice").hidden, false);
-  assert.ok(get("#listLimitNotice").textContent.includes("先頭500件"));
-  assert.ok(get("#listLimitNotice").textContent.includes("650"));
+  assert.strictEqual(get("#pagination").hidden, false);
+  assert.ok(get("#pageInfo").textContent.includes("1 / 7ページ"));
+  assert.ok(get("#pageInfo").textContent.includes("全650件"));
+  assert.strictEqual(get("#prevPageButton").disabled, true, "1ページ目では前へが無効");
+  assert.strictEqual(get("#nextPageButton").disabled, false);
 
-  // CSVには全件が含まれる（先頭打ち切りはあくまで一覧表示のみ）。
+  // 次へでページが進む。
+  events.get("#nextPageButton:click")();
+  assert.ok(get("#pageInfo").textContent.includes("2 / 7ページ"));
+  assert.ok(get("#pageInfo").textContent.includes("101–200件目"));
+
+  // 検索で絞り込むと1ページ目に戻る。
+  get("#searchInput").value = "lib-1";
+  events.get("#searchInput:input")();
+  assert.ok(get("#pageInfo").textContent.includes("1 /") || get("#pagination").hidden);
+
+  // CSVには全件が含まれる（ページングはあくまで一覧表示のみ）。
   const normalized = window.SBON_PARSER.normalizeSbom({ bomFormat: "CycloneDX", specVersion: "1.5", components });
   assert.strictEqual(normalized.components.length, 650);
   const csv = window.SBON_EXPORT.buildCsv(normalized.components);
-  assert.ok(csv.includes("lib-649"), "CSVには表示打ち切り後の項目も含まれる");
+  assert.ok(csv.includes("lib-649"), "CSVには最終ページの項目も含まれる");
 }
 
 function testUiInteractions() {
@@ -506,6 +518,8 @@ function testUiInteractions() {
 
   events.get("#loadSampleButton:click")();
   assert.strictEqual(get("#componentCount").textContent, "4 / 4件表示");
+  // 件数が少なければページネーションは表示しない。
+  assert.strictEqual(get("#pagination").hidden, true);
 
   // 目立つCTA「サンプルSBOMで試す」も同じサンプルを読み込む。
   events.get("#trySampleButton:click")();

@@ -602,13 +602,23 @@ main {
   font-weight: 700;
 }
 
-.list-limit-notice {
-  margin: 0 0 12px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  background: var(--medium-bg);
-  color: var(--medium);
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-info {
+  color: var(--muted);
   font-size: 13px;
+  font-weight: 700;
 }
 
 .review-edit .review-controls {

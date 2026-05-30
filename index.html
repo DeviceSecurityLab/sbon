@@ -258,7 +258,6 @@
             </div>
           </div>
           <p id="reviewAlert" class="review-alert" role="status" hidden></p>
-          <p id="listLimitNotice" class="list-limit-notice" role="status" hidden></p>
           <div class="table-wrap">
             <table>
               <thead>
@@ -274,6 +273,11 @@
               </thead>
               <tbody id="componentRows"></tbody>
             </table>
+          </div>
+          <div id="pagination" class="pagination" hidden>
+            <button id="prevPageButton" type="button" class="secondary-button">前へ</button>
+            <span id="pageInfo" class="page-info" aria-live="polite"></span>
+            <button id="nextPageButton" type="button" class="secondary-button">次へ</button>
           </div>
         </section>
 
