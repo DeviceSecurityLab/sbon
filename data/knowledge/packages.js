@@ -35,6 +35,20 @@ window.SBON_KNOWLEDGE_PACKAGES = [
     sourceUrl: "https://github.com/libexpat/libexpat",
   },
   {
+    id: "pkg.express",
+    canonicalName: "express",
+    displayName: "express",
+    homepageUrl: "https://expressjs.com/",
+    sourceUrl: "git+https://github.com/expressjs/express.git",
+  },
+  {
+    id: "pkg.flask",
+    canonicalName: "flask",
+    displayName: "flask",
+    homepageUrl: null,
+    sourceUrl: "https://github.com/pallets/flask",
+  },
+  {
     id: "pkg.freetype",
     canonicalName: "freetype",
     displayName: "freetype",
@@ -96,6 +110,13 @@ window.SBON_KNOWLEDGE_PACKAGES = [
     displayName: "Linux kernel",
     homepageUrl: "https://www.kernel.org/",
     sourceUrl: "https://git.kernel.org/",
+  },
+  {
+    id: "pkg.lodash",
+    canonicalName: "lodash",
+    displayName: "lodash",
+    homepageUrl: "https://lodash.com/",
+    sourceUrl: "git+https://github.com/lodash/lodash.git",
   },
   {
     id: "pkg.mariadb",
@@ -187,6 +208,13 @@ window.SBON_KNOWLEDGE_PACKAGES = [
     displayName: "Redis",
     homepageUrl: "https://redis.io/",
     sourceUrl: "https://github.com/redis/redis",
+  },
+  {
+    id: "pkg.requests",
+    canonicalName: "requests",
+    displayName: "requests",
+    homepageUrl: null,
+    sourceUrl: "https://github.com/psf/requests",
   },
   {
     id: "pkg.ruby",

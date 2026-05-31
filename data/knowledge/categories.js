@@ -18,6 +18,12 @@ window.SBON_KNOWLEDGE_CATEGORIES = [
     kind: "perspective",
   },
   {
+    id: "language-package",
+    labelJa: "言語ライブラリ・依存パッケージ",
+    descriptionJa: "プログラミング言語のパッケージ管理経由で導入される依存ライブラリです。",
+    kind: "type",
+  },
+  {
     id: "media",
     labelJa: "メディア・グラフィックス",
     descriptionJa: "画像、フォント、音声、動画などのメディア処理に関係するコンポーネントです。",

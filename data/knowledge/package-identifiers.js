@@ -42,6 +42,20 @@ window.SBON_KNOWLEDGE_PACKAGE_IDENTIFIERS = [
     confidence: "high",
   },
   {
+    packageId: "pkg.express",
+    identifierType: "purl-name",
+    value: "express",
+    ecosystem: "npm",
+    confidence: "high",
+  },
+  {
+    packageId: "pkg.flask",
+    identifierType: "purl-name",
+    value: "flask",
+    ecosystem: "pypi",
+    confidence: "high",
+  },
+  {
     packageId: "pkg.freetype",
     identifierType: "purl-name",
     value: "freetype",
@@ -124,6 +138,13 @@ window.SBON_KNOWLEDGE_PACKAGE_IDENTIFIERS = [
     value: "^(linux|linux-kernel|kernel)$",
     ecosystem: "generic",
     confidence: "medium",
+  },
+  {
+    packageId: "pkg.lodash",
+    identifierType: "purl-name",
+    value: "lodash",
+    ecosystem: "npm",
+    confidence: "high",
   },
   {
     packageId: "pkg.mariadb",
@@ -228,6 +249,13 @@ window.SBON_KNOWLEDGE_PACKAGE_IDENTIFIERS = [
     identifierType: "cpe-product",
     value: "redis",
     ecosystem: "generic",
+    confidence: "high",
+  },
+  {
+    packageId: "pkg.requests",
+    identifierType: "purl-name",
+    value: "requests",
+    ecosystem: "pypi",
     confidence: "high",
   },
   {
