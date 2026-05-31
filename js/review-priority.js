@@ -110,6 +110,14 @@
     const type = linked.find((c) => c.kind === "type");
     const entry = knowledgeBase.entriesJa.find((item) => item.packageId === match.packageId);
 
+    // A per-package description is optional. When one is missing, fall back to the
+    // category's own description (perspective first, then type) so a classified
+    // component is still explained at category granularity rather than as unknown.
+    const categoryFallback =
+      perspective?.descriptionJa ||
+      type?.descriptionJa ||
+      "このコンポーネントの説明は知識ベースに登録されていません。";
+
     return {
       category: perspective?.id || "unknown",
       label: perspective?.labelJa || "不明",
@@ -117,7 +125,7 @@
       componentTypeLabel: type?.labelJa || "",
       explanation: entry
         ? `${entry.summary}${entry.whyItMatters ? ` ${entry.whyItMatters}` : ""}`
-        : "このコンポーネントの説明は知識ベースに登録されていません。",
+        : categoryFallback,
     };
   }
 
