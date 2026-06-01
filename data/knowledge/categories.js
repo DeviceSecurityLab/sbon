@@ -6,6 +6,12 @@ window.SBON_KNOWLEDGE_CATEGORIES = [
     kind: "perspective",
   },
   {
+    id: "build-tool",
+    labelJa: "ビルド・パッケージ管理",
+    descriptionJa: "ソフトウェアのビルドや依存パッケージの取得・管理を担うツールです（npm、Maven、pip など）。サプライチェーンの取り込み経路として確認対象になります。",
+    kind: "perspective",
+  },
+  {
     id: "crypto",
     labelJa: "暗号",
     descriptionJa: "暗号化、証明書、鍵管理、通信保護に関係するコンポーネントです。",

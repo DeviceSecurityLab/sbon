@@ -7,6 +7,13 @@ window.SBON_KNOWLEDGE_REFERENCES = [
     retrievedAt: "2026-05-31T01:06:15.492Z",
   },
   {
+    packageId: "pkg.composer",
+    title: "Composer サポート期限 (endoflife.date)",
+    url: "https://endoflife.date/composer",
+    sourceType: "vendor",
+    retrievedAt: "2026-06-01T05:54:17.250Z",
+  },
+  {
     packageId: "pkg.curl",
     title: "既知の脆弱性 (NVD)",
     url: "https://nvd.nist.gov/vuln/search/results?query=curl&search_type=all",
@@ -96,6 +103,13 @@ window.SBON_KNOWLEDGE_REFERENCES = [
     url: "https://nvd.nist.gov/vuln/search/results?query=go&search_type=all",
     sourceType: "database",
     retrievedAt: "2026-05-31T01:06:15.537Z",
+  },
+  {
+    packageId: "pkg.gradle",
+    title: "Gradle サポート期限 (endoflife.date)",
+    url: "https://endoflife.date/gradle",
+    sourceType: "vendor",
+    retrievedAt: "2026-06-01T05:54:15.740Z",
   },
   {
     packageId: "pkg.haproxy",
@@ -189,6 +203,13 @@ window.SBON_KNOWLEDGE_REFERENCES = [
     retrievedAt: "2026-05-31T01:06:15.524Z",
   },
   {
+    packageId: "pkg.maven",
+    title: "Apache Maven サポート期限 (endoflife.date)",
+    url: "https://endoflife.date/apache-maven",
+    sourceType: "vendor",
+    retrievedAt: "2026-06-01T05:54:15.740Z",
+  },
+  {
     packageId: "pkg.mbedtls",
     title: "既知の脆弱性 (NVD)",
     url: "https://nvd.nist.gov/vuln/search/results?query=mbed_tls&search_type=all",
@@ -278,6 +299,13 @@ window.SBON_KNOWLEDGE_REFERENCES = [
     url: "https://nvd.nist.gov/vuln/search/results?query=php&search_type=all",
     sourceType: "database",
     retrievedAt: "2026-05-31T01:06:15.532Z",
+  },
+  {
+    packageId: "pkg.pnpm",
+    title: "pnpm サポート期限 (endoflife.date)",
+    url: "https://endoflife.date/pnpm",
+    sourceType: "vendor",
+    retrievedAt: "2026-06-01T05:54:14.244Z",
   },
   {
     packageId: "pkg.postfix",
@@ -411,6 +439,13 @@ window.SBON_KNOWLEDGE_REFERENCES = [
     url: "https://nvd.nist.gov/vuln/search/results?query=xz&search_type=all",
     sourceType: "database",
     retrievedAt: "2026-05-31T01:06:15.557Z",
+  },
+  {
+    packageId: "pkg.yarn",
+    title: "Yarn サポート期限 (endoflife.date)",
+    url: "https://endoflife.date/yarn",
+    sourceType: "vendor",
+    retrievedAt: "2026-06-01T05:54:13.111Z",
   },
   {
     packageId: "pkg.zlib",
