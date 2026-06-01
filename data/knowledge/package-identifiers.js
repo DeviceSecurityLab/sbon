@@ -1150,7 +1150,7 @@ window.SBON_KNOWLEDGE_PACKAGE_IDENTIFIERS = [
   {
     packageId: "pkg.libsodium",
     identifierType: "regex",
-    value: "^(libsodium|libsodium\\d*|sodium)$",
+    value: "^(libsodium\\d*|libsodium-dev|sodium)$",
     ecosystem: "generic",
     confidence: "medium",
   },
@@ -1510,6 +1510,13 @@ window.SBON_KNOWLEDGE_PACKAGE_IDENTIFIERS = [
     value: "mbed_tls",
     ecosystem: "generic",
     confidence: "high",
+  },
+  {
+    packageId: "pkg.mbedtls",
+    identifierType: "regex",
+    value: "^(mbedtls|mbedtls-(?:utils|tools)|libmbedtls\\d*|libmbedcrypto\\d*|libmbedx509-?\\d*|libmbed(?:tls|crypto|x509)-dev)$",
+    ecosystem: "generic",
+    confidence: "medium",
   },
   {
     packageId: "pkg.musl",
@@ -2403,7 +2410,7 @@ window.SBON_KNOWLEDGE_PACKAGE_IDENTIFIERS = [
   {
     packageId: "pkg.wolfssl",
     identifierType: "regex",
-    value: "^(wolfssl|wolfcrypt|cyassl)$",
+    value: "^(wolfssl|wolfcrypt|cyassl|libwolfssl\\d*|libwolfssl-dev)$",
     ecosystem: "generic",
     confidence: "medium",
   },
