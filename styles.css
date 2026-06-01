@@ -840,6 +840,10 @@ main {
 .panel {
   border: 1px solid var(--line);
   background: var(--panel);
+  /* Allow these grid items to shrink below their content's intrinsic width
+     (grid items default to min-width: auto) so the wide table inside
+     .table-wrap scrolls instead of widening the whole page on mobile. */
+  min-width: 0;
 }
 
 .filters {
