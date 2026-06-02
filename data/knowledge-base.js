@@ -1,4 +1,5 @@
 window.SBON_KNOWLEDGE_BASE = {
+  meta: window.SBON_KNOWLEDGE_META,
   packages: window.SBON_KNOWLEDGE_PACKAGES,
   packageIdentifiers: window.SBON_KNOWLEDGE_PACKAGE_IDENTIFIERS,
   categories: window.SBON_KNOWLEDGE_CATEGORIES,

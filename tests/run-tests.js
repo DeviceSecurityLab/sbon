@@ -10,6 +10,7 @@ function loadCore() {
   context.window.window = context.window;
 
   for (const file of [
+    "data/knowledge/knowledge-meta.js",
     "data/knowledge/packages.js",
     "data/knowledge/package-identifiers.js",
     "data/knowledge/categories.js",
@@ -114,6 +115,7 @@ function loadAppWithDom(localStorage = mockLocalStorage()) {
   };
 
   for (const file of [
+    "data/knowledge/knowledge-meta.js",
     "data/knowledge/packages.js",
     "data/knowledge/package-identifiers.js",
     "data/knowledge/categories.js",

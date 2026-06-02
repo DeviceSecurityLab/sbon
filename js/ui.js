@@ -59,6 +59,7 @@
     }
 
     const elements = {
+      knowledgeVersion: document.querySelector("#knowledgeVersion"),
       fileInput: document.querySelector("#fileInput"),
       dropzone: document.querySelector("#dropzone"),
       loadStatus: document.querySelector("#loadStatus"),
@@ -116,10 +117,28 @@
 
     function start() {
       restoreReviews();
+      renderKnowledgeVersion();
       populateCategoryFilter();
       bindEvents();
       applyReportScope();
       render();
+    }
+
+    // Show which knowledge-base build the viewer is running, so review results
+    // are traceable to a specific export. Falls back silently if meta is absent
+    // (older exports without knowledge-meta.js).
+    function renderKnowledgeVersion() {
+      const target = elements.knowledgeVersion;
+      if (!target) return;
+      const meta = window.SBON_KNOWLEDGE_BASE?.meta;
+      if (!meta || !meta.version) return;
+      const count = meta.counts?.packages;
+      const countText = typeof count === "number" ? `${count.toLocaleString("ja-JP")}件` : "";
+      const parts = [`ナレッジ v${meta.version}`];
+      if (countText) parts.push(countText);
+      if (meta.contentHash) parts.push(`#${meta.contentHash}`);
+      target.textContent = parts.join(" · ");
+      target.title = meta.generatedAt ? `生成: ${meta.generatedAt}` : "";
     }
 
     function populateCategoryFilter() {

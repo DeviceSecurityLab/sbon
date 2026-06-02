@@ -120,6 +120,17 @@ select:focus-visible,
   max-width: 760px;
 }
 
+.site-footer-knowledge {
+  margin: 10px 0 0;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.site-footer-knowledge:empty {
+  display: none;
+}
+
 .report-copyright {
   margin-top: 18px;
   padding-top: 12px;
