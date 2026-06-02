@@ -13,6 +13,9 @@
       compareComponents: null,
       compareDependencies: null,
       reviews: review ? review.createReviewStore(() => persistReviews()) : null,
+      // 一括操作用に選択中の行（reviewKeyベースの安定キー）を保持する。
+      selectedKeys: new Set(),
+      filteredKeys: [],
     };
 
     const REVIEW_STORAGE_KEY = "sbon.reviews.v1";
@@ -87,6 +90,10 @@
       reviewFileInput: document.querySelector("#reviewFileInput"),
       reviewSummary: document.querySelector("#reviewSummary"),
       reviewAlert: document.querySelector("#reviewAlert"),
+      selectAllRows: document.querySelector("#selectAllRows"),
+      bulkBar: document.querySelector("#bulkBar"),
+      bulkCount: document.querySelector("#bulkCount"),
+      clearSelectionButton: document.querySelector("#clearSelectionButton"),
       pagination: document.querySelector("#pagination"),
       prevPageButton: document.querySelector("#prevPageButton"),
       nextPageButton: document.querySelector("#nextPageButton"),
@@ -232,6 +239,27 @@
           if (file) loadReviewFile(file);
         });
       }
+      if (state.reviews) {
+        // 一括操作: 絞り込み結果の全選択／選択解除と、選択行へのステータス一括適用。
+        if (elements.selectAllRows) {
+          elements.selectAllRows.addEventListener("change", () => {
+            setAllFilteredSelection(elements.selectAllRows.checked);
+          });
+        }
+        if (elements.clearSelectionButton) {
+          elements.clearSelectionButton.addEventListener("click", clearSelection);
+        }
+        for (const status of review.STATUSES) {
+          const button = document.querySelector(`#bulkBtn-${status}`);
+          if (button) button.addEventListener("click", () => applyBulkStatus(status));
+        }
+      }
+
+      // 一覧の行選択・チェックボックス・ステータスボタンはイベント委譲で処理する。
+      // 行は再描画のたびに作り直されるため、親（tbody）に一度だけ束ねる。
+      elements.componentRows.addEventListener("click", onRowsClick);
+      elements.componentRows.addEventListener("keydown", onRowsKeydown);
+
       elements.searchInput.addEventListener("input", renderFromFirstPage);
       elements.priorityFilter.addEventListener("change", renderFromFirstPage);
       elements.categoryFilter.addEventListener("change", renderFromFirstPage);
@@ -282,6 +310,7 @@
       state.components = normalized.components;
       state.dependencies = normalized.dependencies;
       state.selectedId = state.components[0]?.id || null;
+      state.selectedKeys.clear();
       state.page = 1;
       showLoadStatus(
         `${sourceName ? `「${sourceName}」を` : ""}${normalized.format} として読み込みました。コンポーネント${normalized.components.length}件。`,
@@ -361,6 +390,7 @@
     function render() {
       const filtered = getFilteredComponents();
       const sorted = sortComponents(filtered);
+      state.filteredKeys = sorted.map((component) => reviewKey(component));
       renderSummary();
       renderPrintReport();
       renderRows(sorted);
@@ -626,24 +656,26 @@
       const visible = components.slice(start, start + PAGE_SIZE);
 
       for (const component of visible) {
+        const key = reviewKey(component);
         const row = document.createElement("tr");
         row.className = component.id === state.selectedId ? "is-selected" : "";
         row.tabIndex = 0;
+        row.dataset.componentId = component.id;
+        const selectCell = state.reviews
+          ? `<td class="select-col"><input type="checkbox" class="row-select" data-select-key="${escapeHtml(key)}" aria-label="この行を選択"${state.selectedKeys.has(key) ? " checked" : ""} /></td>`
+          : "<td class=\"select-col\"></td>";
+        const reviewCell = state.reviews
+          ? `<td class="review-cell">${reviewStatusGroup(key, reviewStatusOf(component))}</td>`
+          : `<td>${reviewStatusBadge(reviewStatusOf(component))}</td>`;
         row.innerHTML = `
+          ${selectCell}
           <td><span class="pkg-name">${escapeHtml(component.name)}</span><span class="pkg-id">${escapeHtml(component.purl || component.id)}</span></td>
           <td>${escapeHtml(component.version)}</td>
           <td><span class="badge ${component.reviewPriority}">${reviewPriorityLabel(component.reviewPriority)}</span></td>
           <td class="category">${escapeHtml(component.categoryLabel)}${component.componentTypeLabel ? `<span class="pkg-id">${escapeHtml(component.componentTypeLabel)}</span>` : ""}</td>
           <td>${component.vulnerabilities.length}</td>
-          <td>${reviewStatusBadge(reviewStatusOf(component))}</td>
+          ${reviewCell}
         `;
-        row.addEventListener("click", () => selectComponent(component.id));
-        row.addEventListener("keydown", (event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            selectComponent(component.id);
-          }
-        });
         elements.componentRows.append(row);
       }
     }
@@ -681,6 +713,8 @@
       elements.componentCount.textContent = `${visibleCount} / ${state.components.length}件表示`;
       renderReviewSummary();
       renderReviewAlert();
+      renderBulkBar();
+      renderSelectAllState();
       for (const button of elements.sortButtons) {
         const active = button.dataset.sort === state.sortKey;
         button.classList.toggle("is-active", active);
@@ -774,18 +808,14 @@
     function renderReviewSection(component) {
       if (!state.reviews) return "";
       const entry = state.reviews.get(reviewKey(component));
-      const options = review.STATUSES.map(
-        (status) =>
-          `<option value="${status}"${status === entry.status ? " selected" : ""}>${escapeHtml(review.statusLabel(status))}</option>`,
-      ).join("");
       return `
         <div class="detail-section review-edit">
           <h4>レビュー</h4>
           <div class="review-controls">
-            <label class="review-field">
+            <div class="review-field">
               <span>確認ステータス</span>
-              <select id="reviewStatusSelect" class="review-status-select">${options}</select>
-            </label>
+              <div class="review-pill-group" role="group" aria-label="確認ステータス">${reviewStatusGroup(reviewKey(component), entry.status, "reviewPill")}</div>
+            </div>
             <label class="review-field">
               <span>確認メモ</span>
               <textarea id="reviewNoteInput" class="review-note-input" rows="3" placeholder="確認した内容や指摘事項を記録できます。">${escapeHtml(entry.note)}</textarea>
@@ -798,12 +828,15 @@
     function bindReviewControls(component) {
       if (!state.reviews) return;
       const key = reviewKey(component);
-      const select = document.querySelector("#reviewStatusSelect");
-      if (select) {
-        select.addEventListener("change", () => {
-          state.reviews.setStatus(key, select.value);
-          render();
-        });
+      // ステータスボタンは安定IDで束ねる。1クリックで状態を切り替える。
+      for (const status of review.STATUSES) {
+        const button = document.querySelector(`#reviewPill-${status}`);
+        if (button) {
+          button.addEventListener("click", () => {
+            state.reviews.setStatus(key, status);
+            render();
+          });
+        }
       }
       const note = document.querySelector("#reviewNoteInput");
       if (note) {
@@ -932,6 +965,99 @@
     function reviewStatusOf(component) {
       if (!state.reviews) return "unreviewed";
       return state.reviews.get(reviewKey(component)).status;
+    }
+
+    function reviewStatusGroup(key, currentStatus, idPrefix) {
+      // 承認・要対応などを1クリックで切り替えるボタン群。一覧セルと詳細パネルで
+      // 共用する。idPrefix を渡すと各ボタンに安定IDを付ける（詳細パネル用）。
+      return review.STATUSES.map((status) => {
+        const active = status === currentStatus;
+        const id = idPrefix ? ` id="${idPrefix}-${status}"` : "";
+        return `<button type="button"${id} class="review-pill ${status}${active ? " is-active" : ""}" data-review-key="${escapeHtml(key)}" data-review-status="${status}" aria-pressed="${active}">${escapeHtml(review.statusLabel(status))}</button>`;
+      }).join("");
+    }
+
+    function onRowsClick(event) {
+      const target = event.target;
+      if (!target || !target.closest) return;
+      const pill = target.closest(".review-pill");
+      if (pill && pill.dataset.reviewStatus) {
+        if (state.reviews) {
+          state.reviews.setStatus(pill.dataset.reviewKey, pill.dataset.reviewStatus);
+          render();
+        }
+        return;
+      }
+      const checkbox = target.closest(".row-select");
+      if (checkbox) {
+        toggleSelection(checkbox.dataset.selectKey, checkbox.checked);
+        return;
+      }
+      const row = target.closest("tr[data-component-id]");
+      if (row) selectComponent(row.dataset.componentId);
+    }
+
+    function onRowsKeydown(event) {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const target = event.target;
+      if (!target || !target.closest) return;
+      // ボタンやチェックボックス自身は既定の動作に任せる。
+      if (target.closest(".review-pill, .row-select")) return;
+      const row = target.closest("tr[data-component-id]");
+      if (row) {
+        event.preventDefault();
+        selectComponent(row.dataset.componentId);
+      }
+    }
+
+    function toggleSelection(key, selected) {
+      if (!key) return;
+      if (selected) state.selectedKeys.add(key);
+      else state.selectedKeys.delete(key);
+      // 選択状態だけが変わるので、一覧全体ではなく選択UIのみ更新する。
+      renderBulkBar();
+      renderSelectAllState();
+    }
+
+    function setAllFilteredSelection(selected) {
+      for (const key of state.filteredKeys) {
+        if (selected) state.selectedKeys.add(key);
+        else state.selectedKeys.delete(key);
+      }
+      render();
+    }
+
+    function clearSelection() {
+      state.selectedKeys.clear();
+      render();
+    }
+
+    function applyBulkStatus(status) {
+      if (!state.reviews || state.selectedKeys.size === 0) return;
+      for (const key of state.selectedKeys) {
+        state.reviews.setStatus(key, status);
+      }
+      render();
+    }
+
+    function renderBulkBar() {
+      if (!elements.bulkBar) return;
+      const count = state.selectedKeys.size;
+      if (!state.reviews || count === 0) {
+        elements.bulkBar.hidden = true;
+        return;
+      }
+      elements.bulkBar.hidden = false;
+      if (elements.bulkCount) elements.bulkCount.textContent = `${count}件を選択中`;
+    }
+
+    function renderSelectAllState() {
+      const checkbox = elements.selectAllRows;
+      if (!checkbox) return;
+      const total = state.filteredKeys.length;
+      const selected = state.filteredKeys.filter((key) => state.selectedKeys.has(key)).length;
+      checkbox.checked = total > 0 && selected === total;
+      checkbox.indeterminate = selected > 0 && selected < total;
     }
 
     function selectComponent(id) {

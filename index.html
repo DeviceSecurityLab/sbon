@@ -252,10 +252,22 @@
             </div>
           </div>
           <p id="reviewAlert" class="review-alert" role="status" hidden></p>
+          <div id="bulkBar" class="bulk-bar" role="region" aria-label="一括レビュー操作" hidden>
+            <span id="bulkCount" class="bulk-count"></span>
+            <div class="bulk-actions">
+              <span class="bulk-label">まとめて：</span>
+              <button id="bulkBtn-action-required" type="button" class="review-pill action-required" data-bulk-status="action-required">要対応</button>
+              <button id="bulkBtn-in-progress" type="button" class="review-pill in-progress" data-bulk-status="in-progress">確認中</button>
+              <button id="bulkBtn-approved" type="button" class="review-pill approved" data-bulk-status="approved">承認</button>
+              <button id="bulkBtn-unreviewed" type="button" class="review-pill unreviewed" data-bulk-status="unreviewed">未確認に戻す</button>
+            </div>
+            <button id="clearSelectionButton" type="button" class="link-button">選択解除</button>
+          </div>
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
+                  <th class="select-col"><input id="selectAllRows" type="checkbox" aria-label="絞り込み結果をすべて選択" /></th>
                   <th><button class="sort-button" type="button" data-sort="name">名称</button></th>
                   <th><button class="sort-button" type="button" data-sort="version">バージョン</button></th>
                   <th><button class="sort-button" type="button" data-sort="priority">確認優先度</button></th>
@@ -300,7 +312,7 @@
 
     <template id="emptyRowTemplate">
       <tr>
-        <td colspan="6" class="empty-cell">SBOM JSONを読み込んでください。</td>
+        <td colspan="7" class="empty-cell">SBOM JSONを読み込んでください。</td>
       </tr>
     </template>
 

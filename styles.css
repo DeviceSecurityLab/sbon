@@ -23,6 +23,13 @@
   box-sizing: border-box;
 }
 
+/* `display` を指定した要素（.bulk-bar / .pagination など）でも hidden 属性が
+   確実に効くようにする。作成者スタイルは UA の [hidden]{display:none} を
+   上書きしてしまうため、明示的に打ち消す。 */
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   min-width: 320px;
@@ -607,6 +614,131 @@ main {
 .review-summary {
   color: var(--accent-dark);
   font-weight: 700;
+}
+
+/* 一覧と詳細で共用するワンクリックのステータス切替ボタン群。 */
+.review-cell,
+.review-pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.review-pill {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.review-pill:hover {
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+.review-pill:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.review-pill.is-active {
+  border-color: transparent;
+}
+
+.review-pill.is-active.unreviewed {
+  background: #eef1f4;
+  color: var(--muted);
+}
+
+.review-pill.is-active.in-progress {
+  background: var(--medium-bg);
+  color: var(--medium);
+}
+
+.review-pill.is-active.approved {
+  background: var(--low-bg);
+  color: var(--low);
+}
+
+.review-pill.is-active.action-required {
+  background: var(--high-bg);
+  color: var(--high);
+}
+
+/* 一括操作バーのボタンは対象ステータスの色を常に表示する。 */
+.bulk-actions .review-pill.in-progress {
+  background: var(--medium-bg);
+  color: var(--medium);
+  border-color: transparent;
+}
+
+.bulk-actions .review-pill.approved {
+  background: var(--low-bg);
+  color: var(--low);
+  border-color: transparent;
+}
+
+.bulk-actions .review-pill.action-required {
+  background: var(--high-bg);
+  color: var(--high);
+  border-color: transparent;
+}
+
+.select-col {
+  width: 1%;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.bulk-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: #eef4f8;
+}
+
+.bulk-count {
+  font-weight: 700;
+  color: var(--accent-dark);
+}
+
+.bulk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.bulk-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.link-button {
+  margin-left: auto;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--accent-dark);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.link-button:hover {
+  color: var(--accent);
 }
 
 .review-alert {

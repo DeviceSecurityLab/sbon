@@ -535,10 +535,9 @@ function testUiInteractions() {
   assert.strictEqual(get("#reviewAlert").hidden, false);
   assert.ok(get("#reviewAlert").textContent.includes("最優先確認"));
 
-  // レビュー: 選択中コンポーネント（openssl）のステータスを変更すると一覧の要約に反映される。
-  const reviewSelect = get("#reviewStatusSelect");
-  reviewSelect.value = "approved";
-  events.get("#reviewStatusSelect:change")();
+  // レビュー: 選択中コンポーネント（openssl）のステータスをワンクリックの
+  // 「承認」ボタンで変更すると一覧の要約に反映される。
+  events.get("#reviewPill-approved:click")();
   assert.ok(get("#reviewSummary").textContent.includes("承認1"));
   // 変更は localStorage に自動保存される。
   assert.ok(sharedStorage.getItem("sbon.reviews.v1"), "レビューが自動保存される");
@@ -549,6 +548,17 @@ function testUiInteractions() {
   const reloaded = loadAppWithDom(sharedStorage);
   reloaded.events.get("#loadSampleButton:click")();
   assert.ok(reloaded.get("#reviewSummary").textContent.includes("承認1"), "再読み込みで復元");
+
+  // 一括操作: 絞り込み結果を全選択し、まとめて「承認」を適用する。
+  get("#selectAllRows").checked = true;
+  events.get("#selectAllRows:change")();
+  assert.strictEqual(get("#bulkBar").hidden, false, "選択するとバーが表示される");
+  assert.ok(get("#bulkCount").textContent.includes("4件"));
+  events.get("#bulkBtn-approved:click")();
+  assert.ok(get("#reviewSummary").textContent.includes("承認4"), "4件まとめて承認");
+  // 選択解除でバーが隠れる。
+  events.get("#clearSelectionButton:click")();
+  assert.strictEqual(get("#bulkBar").hidden, true);
 
   get("#searchInput").value = "openssl";
   events.get("#searchInput:input")();
