@@ -518,7 +518,7 @@ p {
 }
 
 .preview-card {
-  background: oklch(0.99 0.004 250);
+  background: var(--panel);
   border: 1px solid oklch(1 0 0 / 0.6);
   border-radius: 16px;
   box-shadow: 0 30px 70px oklch(0.12 0.06 262 / 0.55);
