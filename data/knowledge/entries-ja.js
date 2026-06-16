@@ -5491,8 +5491,8 @@ window.SBON_KNOWLEDGE_ENTRIES_JA = [
   },
   {
     packageId: "pkg.vinyl-cache",
-    summary: "ネットワーク応答を高速化するキャッシュ製品Vinyl Cacheです。",
-    whatItDoes: "コンテンツをキャッシュしてネットワーク配信を高速化します。",
+    summary: "HTTPアクセラレータ兼キャッシュ型リバースプロキシVinyl Cache（旧Varnish Cache）です。",
+    whatItDoes: "Webコンテンツをキャッシュしてバックエンドの負荷を減らし、HTTP配信を高速化します。",
     whyItMatters: "ネットワーク通信や公開境界を担うため、サポート終了版は外部からの攻撃の起点になり得ます。",
     operationalImpact: "サポートが終了したバージョンが使われていないか確認し、サポート対象への更新計画とベンダーの保守方針を確認してください。",
     confidence: "medium",
