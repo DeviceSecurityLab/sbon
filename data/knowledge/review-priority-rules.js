@@ -66,7 +66,7 @@ window.SBON_KNOWLEDGE_REVIEW_PRIORITY_RULES = [
     id: "priority.debian.eol",
     packageId: "pkg.debian",
     ruleType: "version-prefix",
-    values: ["11.", "10.", "9.", "8.", "7.", "6.", "5.", "4.", "3.1.", "3.0.", "2.2.", "2.1.", "2.0.", "1.3.", "1.2.", "1.1."],
+    values: ["12.", "11.", "10.", "9.", "8.", "7.", "6.", "5.", "4.", "3.1.", "3.0.", "2.2.", "2.1.", "2.0.", "1.3.", "1.2.", "1.1."],
     severity: "high",
     findingJa: "サポートが終了したDebianの系列が使われている可能性があります。更新計画とベンダーの保守方針を確認してください。",
     enabled: true,
